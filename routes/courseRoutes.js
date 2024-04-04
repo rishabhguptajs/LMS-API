@@ -6,6 +6,27 @@ import { verifyToken, verifySuperadmin } from "../middlewares/authMiddleware.js"
 const router = express.Router()
 const resend = new Resend(process.env.RESEND_API)
 
+// first create a course table
+async function createCoursesTable() {
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS courses (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        category TEXT NOT NULL,
+        level TEXT NOT NULL,
+        popularity INT NOT NULL
+      )`
+    console.log("Courses table created or already exists")
+  }
+  catch (error) {
+    console.error("Error creating courses table:", error)
+  }
+}
+
+createCoursesTable()
+
 // Get Courses with filtering and pagination
 router.get("/filter", verifyToken, async (req, res) => {
   try {

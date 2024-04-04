@@ -98,8 +98,13 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" })
     }
 
+    console.log(existingUser[0].issuperadmin)
+
     // Generate JWT token
-    const token = jwt.sign({ email }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ 
+      email: existingUser[0].email,
+      isSuperadmin: existingUser[0].issuperadmin,
+    }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     })
 
