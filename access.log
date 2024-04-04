@@ -61,3 +61,5 @@
 ::1 - - [04/Apr/2024:08:45:28 +0000] "GET /api/courses/course/details/3 HTTP/1.1" 200 188 "-" "PostmanRuntime/7.37.0"
 ::1 - - [04/Apr/2024:08:50:38 +0000] "POST /api/auth/login HTTP/1.1" 200 216 "-" "PostmanRuntime/7.37.0"
 ::1 - - [04/Apr/2024:08:51:35 +0000] "POST /api/courses/enroll HTTP/1.1" 500 26 "-" "PostmanRuntime/7.37.0"
+::1 - - [04/Apr/2024:08:52:34 +0000] "POST /api/courses/enroll HTTP/1.1" 201 42 "-" "PostmanRuntime/7.37.0"
+::1 - - [04/Apr/2024:08:53:53 +0000] "GET /api/courses/enrolled HTTP/1.1" 200 162 "-" "PostmanRuntime/7.37.0"
