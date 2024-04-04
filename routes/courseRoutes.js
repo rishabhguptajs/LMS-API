@@ -25,43 +25,60 @@ async function createCoursesTable() {
   }
 }
 
+async function createEnrollmentsTable() {
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS enrollments (
+        id SERIAL PRIMARY KEY,
+        user_email TEXT NOT NULL,
+        course_id INT NOT NULL,
+        FOREIGN KEY (user_email) REFERENCES users(email),
+        FOREIGN KEY (course_id) REFERENCES courses(id)
+      )`
+    console.log("Enrollments table created or already exists")
+  }
+  catch (error) {
+    console.error("Error creating enrollments table:", error)
+  }
+}
+
 createCoursesTable()
+createEnrollmentsTable()
 
 // Get Courses with filtering and pagination
 router.get("/filter", verifyToken, async (req, res) => {
   try {
-    const { category, level, popularity, page, limit } = req.query
+    const { category, level, popularity, page, limit } = req.query;
 
-    // Construct SQL query based on filtering and pagination parameters
-    let query = sql`SELECT * FROM courses`
-    let queryParams = []
+    let query = [];
 
-    // Filter courses by category, level, and/or popularity if provided
+    let conditions = [];
+
     if (category) {
-      query.append(sql` WHERE category = ${category}`)
+      conditions.push(sql`category = ${category}`);
     }
     if (level) {
-      query.append(sql` AND level = ${level}`)
+      conditions.push(sql`level = ${level}`);
     }
     if (popularity) {
-      query.append(sql` AND popularity >= ${popularity}`)
+      conditions.push(sql`popularity >= ${popularity}`);
     }
 
-    // Paginate results
+    if (conditions.length > 0) {
+      query.append(sql` WHERE ${sql.join(conditions, sql` AND `)}`);
+    }
+
     if (page && limit) {
-      const offset = (parseInt(page) - 1) * parseInt(limit)
-      query.append(sql` LIMIT ${limit} OFFSET ${offset}`)
+      const offset = (parseInt(page) - 1) * parseInt(limit);
+      query.append(sql` LIMIT ${limit} OFFSET ${offset}`);
     }
 
-    // Execute the query
-    const courses = await query
-
-    res.status(200).json(courses)
+    res.status(200).json(courses);
   } catch (error) {
-    console.error("Error fetching courses:", error)
-    res.status(500).json({ message: "Server Error" })
+    console.error("Error fetching courses:", error);
+    res.status(500).json({ message: "Server Error" });
   }
-})
+});
 
 // Create a new course (Superadmin only)
 router.post("/new", verifyToken, verifySuperadmin, async (req, res) => {
@@ -79,6 +96,26 @@ router.post("/new", verifyToken, verifySuperadmin, async (req, res) => {
     console.error("Error creating course:", error)
     res.status(500).json({ message: "Server Error" })
   }
+})
+
+router.get('/course/details/:id', verifyToken, verifySuperadmin, async(req, res) => {
+  try {
+    const courseID = req.params.id
+
+    const course = await sql`
+      SELECT * FROM courses WHERE id = ${courseID}
+    `;
+
+    if (course.length === 0) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    res.status(200).json(course[0]);
+  } catch (error) {
+    console.error("Error fetching course details:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+
 })
 
 // Update course by ID (Superadmin only)
@@ -137,7 +174,7 @@ router.post("/enroll", verifyToken, async (req, res) => {
     if (existingEnrollment.length > 0) {
       return res
         .status(400)
-        .json({ message: "User is already enrolled in the course" })
+        .json({ message: "You are already enrolled in the course" })
     }
 
     // Insert new enrollment record into the database
