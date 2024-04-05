@@ -9,41 +9,39 @@ const resend = new Resend(process.env.RESEND_API)
 // get Courses with filtering and pagination
 router.get("/filter", verifyToken, async (req, res) => {
   try {
-    const { category, level, popularity, page, limit } = req.query
+    const { category, level, popularity } = req.body
 
-    let query = []
-
-    let conditions = []
-
-    if (category) {
-      conditions.push(sql`category = ${category}`)
-    }
-    if (level) {
-      conditions.push(sql`level = ${level}`)
-    }
-    if (popularity) {
-      conditions.push(sql`popularity >= ${popularity}`)
+    if(!category && !level && !popularity) {
+      return res.status(400).json({ message: "Please provide at least one filter" })
     }
 
-    if (conditions.length > 0) {
-      query.append(sql` WHERE ${sql.join(conditions, sql` AND `)}`)
+    let query = "SELECT * FROM courses WHERE"
+    let filters = []
+
+    if(category){
+      filters.push(` category = '${category}'`)
+    }
+    if(level){
+      filters.push(`level = '${level}'`)
+    }
+    if(popularity){
+      filters.push(`popularity = '${popularity}'`)
     }
 
-    if (page && limit) {
-      const offset = (parseInt(page) - 1) * parseInt(limit)
-      query.append(sql` LIMIT ${limit} OFFSET ${offset}`)
-    }
+    query += filters.join(" AND ")
+    console.log(query)
 
+    const courses = await sql`${query}`
     res.status(200).json(courses)
   } catch (error) {
-    console.error("Error fetching courses:", error)
+    console.error("Error fetching courses while filtering:", error)
     res
       .status(500)
       .json({ message: "Server Error while filtering the courses!" })
   }
 })
 
-// Create a new course (Superadmin only)
+// create a new course (Superadmin only)
 router.post("/new", verifyToken, verifySuperadmin, async (req, res) => {
   try {
     const { title, description, category, level, popularity } = req.body
@@ -62,20 +60,18 @@ router.post("/new", verifyToken, verifySuperadmin, async (req, res) => {
 })
 
 // get all the courses from db with pagination where only 2 courses are shown on each page
-
 router.get('/all', verifyToken, async (req, res) => {
   try {
     const limit = 2;
     const page = req.query.page || 1;
+    // we can send a query for page like this: http://localhost:5000/api/courses/all?page=2
 
     const courses = await sql`SELECT * FROM courses LIMIT ${limit} OFFSET ${(page - 1) * limit}`
 
     res.status(200).json(courses)
   } catch (error) {
     console.error("Error fetching courses:", error)
-    res
-      .status(500)
-      .json({ message: "Server Error while fetching the courses!" })
+    res.status(500).json({ message: "Server Error while fetching the courses!" })
   }
 });
 
