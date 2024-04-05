@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken"
 import sql from "../config/config.js"
 import cloudinary from '../config/cloudinaryConfig.js'
 import { Resend } from "resend"
-import { User } from "../models/userModel.js"
 import{ passwordStrength } from "check-password-strength"
 import { verifyToken } from "../middlewares/authMiddleware.js"
 
@@ -12,18 +11,6 @@ import { verifyToken } from "../middlewares/authMiddleware.js"
 const router = express.Router()
 const resend = new Resend(process.env.RESEND_API)
 
-async function createUsersTable() {
-  try {
-    const { tableName, columns } = User;
-    const columnDefinitions = Object.entries(columns).map(([columnName, columnDefinition]) => `${columnName} ${columnDefinition}`).join(', ');
-    await sql.unsafe(`CREATE TABLE IF NOT EXISTS "${tableName}" (${columnDefinitions})`);
-    console.log("Users table created or already exists");
-  } catch (error) {
-    console.error("Error creating users table:", error);
-  }
-}
-
-createUsersTable();
 
 router.post("/register", async (req, res) => {
   try {

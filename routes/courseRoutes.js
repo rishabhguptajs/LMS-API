@@ -6,43 +6,6 @@ import { verifyToken, verifySuperadmin } from "../middlewares/authMiddleware.js"
 const router = express.Router()
 const resend = new Resend(process.env.RESEND_API)
 
-// first create a course table
-async function createCoursesTable() {
-  try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS courses (
-        id SERIAL PRIMARY KEY,
-        title TEXT NOT NULL,
-        description TEXT NOT NULL,
-        category TEXT NOT NULL,
-        level TEXT NOT NULL,
-        popularity INT NOT NULL
-      )`
-    console.log("Courses table created or already exists")
-  } catch (error) {
-    console.error("Error creating courses table:", error)
-  }
-}
-
-async function createEnrollmentsTable() {
-  try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS enrollments (
-        id SERIAL PRIMARY KEY,
-        user_email TEXT NOT NULL,
-        course_id INT NOT NULL,
-        FOREIGN KEY (user_email) REFERENCES users(email),
-        FOREIGN KEY (course_id) REFERENCES courses(id)
-      )`
-    console.log("Enrollments table created or already exists")
-  } catch (error) {
-    console.error("Error creating enrollments table:", error)
-  }
-}
-
-createCoursesTable()
-createEnrollmentsTable()
-
 // get Courses with filtering and pagination
 router.get("/filter", verifyToken, async (req, res) => {
   try {
@@ -98,17 +61,21 @@ router.post("/new", verifyToken, verifySuperadmin, async (req, res) => {
   }
 })
 
-// get all the courses from db
+// get all the courses from db with pagination where only 2 courses are shown on each page
 
 router.get('/all', verifyToken, async (req, res) => {
   try {
-    const courses = await sql`
-      SELECT * FROM courses
-    `
+    const limit = 2;
+    const page = req.query.page || 1;
+
+    const courses = await sql`SELECT * FROM courses LIMIT ${limit} OFFSET ${(page - 1) * limit}`
+
     res.status(200).json(courses)
   } catch (error) {
-    console.error('Error fetching courses:', error)
-    res.status(500).json({ message: 'Server Error while fetching courses!' })
+    console.error("Error fetching courses:", error)
+    res
+      .status(500)
+      .json({ message: "Server Error while fetching the courses!" })
   }
 });
 
@@ -230,7 +197,7 @@ router.get("/enrolled", verifyToken, async (req, res) => {
   try {
     const userEmail = req.user.email
 
-    // Query the database to get courses enrolled by the user
+    // query the database to get courses enrolled by the user
     const enrolledCourses = await sql`
       SELECT c.title, c.description, c.category, c.level, c.popularity
       FROM courses c
