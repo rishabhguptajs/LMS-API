@@ -24,7 +24,9 @@ router.get("/profile", verifyToken, async (req, res) => {
     res.status(200).json(userProfile[0])
   } catch (error) {
     console.error("Error fetching user profile:", error)
-    res.status(500).json({ message: "Server Error" })
+    res
+      .status(500)
+      .json({ message: "Server Error while fetching the user profile!" })
   }
 })
 
@@ -40,15 +42,17 @@ router.put("/update", verifyToken, async (req, res) => {
       WHERE email = ${email}
     `
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: "User profile updated successfully",
       name,
       profile_picture,
       other_details,
-     })
+    })
   } catch (error) {
     console.error("Error updating user profile:", error)
-    res.status(500).json({ message: "Server Error" })
+    res
+      .status(500)
+      .json({ message: "Server Error while updating the user profile!" })
   }
 })
 

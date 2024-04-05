@@ -1,7 +1,7 @@
 import express from "express"
 import { Resend } from "resend"
-import sql from "../config/config.js" // Import the PostgreSQL client instance
-import { verifyToken, verifySuperadmin } from "../middlewares/authMiddleware.js" // Import authentication middleware
+import sql from "../config/config.js"
+import { verifyToken, verifySuperadmin } from "../middlewares/authMiddleware.js"
 
 const router = express.Router()
 const resend = new Resend(process.env.RESEND_API)
@@ -19,8 +19,7 @@ async function createCoursesTable() {
         popularity INT NOT NULL
       )`
     console.log("Courses table created or already exists")
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error creating courses table:", error)
   }
 }
@@ -36,8 +35,7 @@ async function createEnrollmentsTable() {
         FOREIGN KEY (course_id) REFERENCES courses(id)
       )`
     console.log("Enrollments table created or already exists")
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error creating enrollments table:", error)
   }
 }
@@ -45,40 +43,42 @@ async function createEnrollmentsTable() {
 createCoursesTable()
 createEnrollmentsTable()
 
-// Get Courses with filtering and pagination
+// get Courses with filtering and pagination
 router.get("/filter", verifyToken, async (req, res) => {
   try {
-    const { category, level, popularity, page, limit } = req.query;
+    const { category, level, popularity, page, limit } = req.query
 
-    let query = [];
+    let query = []
 
-    let conditions = [];
+    let conditions = []
 
     if (category) {
-      conditions.push(sql`category = ${category}`);
+      conditions.push(sql`category = ${category}`)
     }
     if (level) {
-      conditions.push(sql`level = ${level}`);
+      conditions.push(sql`level = ${level}`)
     }
     if (popularity) {
-      conditions.push(sql`popularity >= ${popularity}`);
+      conditions.push(sql`popularity >= ${popularity}`)
     }
 
     if (conditions.length > 0) {
-      query.append(sql` WHERE ${sql.join(conditions, sql` AND `)}`);
+      query.append(sql` WHERE ${sql.join(conditions, sql` AND `)}`)
     }
 
     if (page && limit) {
-      const offset = (parseInt(page) - 1) * parseInt(limit);
-      query.append(sql` LIMIT ${limit} OFFSET ${offset}`);
+      const offset = (parseInt(page) - 1) * parseInt(limit)
+      query.append(sql` LIMIT ${limit} OFFSET ${offset}`)
     }
 
-    res.status(200).json(courses);
+    res.status(200).json(courses)
   } catch (error) {
-    console.error("Error fetching courses:", error);
-    res.status(500).json({ message: "Server Error" });
+    console.error("Error fetching courses:", error)
+    res
+      .status(500)
+      .json({ message: "Server Error while filtering the courses!" })
   }
-});
+})
 
 // Create a new course (Superadmin only)
 router.post("/new", verifyToken, verifySuperadmin, async (req, res) => {
@@ -94,29 +94,51 @@ router.post("/new", verifyToken, verifySuperadmin, async (req, res) => {
     res.status(201).json({ message: "Course created successfully" })
   } catch (error) {
     console.error("Error creating course:", error)
-    res.status(500).json({ message: "Server Error" })
+    res.status(500).json({ message: "Server Error while creating the course!" })
   }
 })
 
-router.get('/course/details/:id', verifyToken, verifySuperadmin, async(req, res) => {
+// get all the courses from db
+
+router.get('/all', verifyToken, async (req, res) => {
   try {
-    const courseID = req.params.id
-
-    const course = await sql`
-      SELECT * FROM courses WHERE id = ${courseID}
-    `;
-
-    if (course.length === 0) {
-      return res.status(404).json({ message: "Course not found" });
-    }
-
-    res.status(200).json(course[0]);
+    const courses = await sql`
+      SELECT * FROM courses
+    `
+    res.status(200).json(courses)
   } catch (error) {
-    console.error("Error fetching course details:", error);
-    res.status(500).json({ message: "Server Error" });
+    console.error('Error fetching courses:', error)
+    res.status(500).json({ message: 'Server Error while fetching courses!' })
   }
+});
 
-})
+router.get(
+  "/course/details/:id",
+  verifyToken,
+  async (req, res) => {
+    try {
+      const courseID = req.params.id
+
+      const course = await sql`
+      SELECT * FROM courses WHERE id = ${courseID}
+    `
+
+      if (course.length === 0) {
+        return res.status(404).json({ message: "Course not found" })
+      }
+
+      res.status(200).json(course[0])
+    } catch (error) {
+      console.error("Error fetching course details:", error)
+      res
+        .status(500)
+        .json({
+          message:
+            "Server Error while fetching single course details using id!",
+        })
+    }
+  }
+)
 
 // Update course by ID (Superadmin only)
 router.put("/update/:id", verifyToken, verifySuperadmin, async (req, res) => {
@@ -134,7 +156,7 @@ router.put("/update/:id", verifyToken, verifySuperadmin, async (req, res) => {
     res.status(200).json({ message: "Course updated successfully" })
   } catch (error) {
     console.error("Error updating course:", error)
-    res.status(500).json({ message: "Server Error" })
+    res.status(500).json({ message: "Server Error while updating the course!" })
   }
 })
 
@@ -155,7 +177,11 @@ router.delete(
       res.status(200).json({ message: "Course deleted successfully" })
     } catch (error) {
       console.error("Error deleting course:", error)
-      res.status(500).json({ message: "Server Error" })
+      res
+        .status(500)
+        .json({
+          message: "Server Error while deleting the course using its id!",
+        })
     }
   }
 )
@@ -193,7 +219,9 @@ router.post("/enroll", verifyToken, async (req, res) => {
     })
   } catch (error) {
     console.error("Error enrolling in course:", error)
-    res.status(500).json({ message: "Server Error" })
+    res
+      .status(500)
+      .json({ message: "Server Error while enrolling in a course!" })
   }
 })
 
@@ -213,7 +241,9 @@ router.get("/enrolled", verifyToken, async (req, res) => {
     res.status(200).json(enrolledCourses)
   } catch (error) {
     console.error("Error fetching enrolled courses:", error)
-    res.status(500).json({ message: "Server Error" })
+    res
+      .status(500)
+      .json({ message: "Server Error while fetching enrolled courses!" })
   }
 })
 

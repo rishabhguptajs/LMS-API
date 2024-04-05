@@ -12,6 +12,7 @@ const app = express()
 const accessLog = fs.createWriteStream("./access.log", { flags: "a" })
 
 app.use(morgan("combined", { stream:accessLog }))
+app.use(morgan("dev"))
 app.use(express.json())
 
 app.use("/api/users", userRoutes)
