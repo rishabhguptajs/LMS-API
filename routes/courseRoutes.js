@@ -16,49 +16,77 @@ router.get("/filter", verifyToken, async (req, res) => {
       const courses = await sql`
         SELECT * FROM courses WHERE category = ${category} AND level = ${level} AND popularity = ${popularity}
       `
-      return res.status(200).json(courses)
+      if(courses.length === 0){
+        return res.status(404).json({ message: "No courses found with these filters!" })
+      } else {
+        return res.status(200).json(courses)
+      }
     }
 
     if(category && level){
       const courses = await sql`
         SELECT * FROM courses WHERE category = ${category} AND level = ${level}
       `
-      return res.status(200).json(courses)
+      if(courses.length === 0){
+        return res.status(404).json({ message: "No courses found with these filters!" })
+      } else {
+        return res.status(200).json(courses)
+      }
     }
 
     if(category && popularity){
       const courses = await sql`
         SELECT * FROM courses WHERE category = ${category} AND popularity = ${popularity}
       `
-      return res.status(200).json(courses)
+      if(courses.length === 0){
+        return res.status(404).json({ message: "No courses found with these filters!" })
+      } else {
+        return res.status(200).json(courses)
+      }
     }
 
     if(level && popularity){
       const courses = await sql`
         SELECT * FROM courses WHERE level = ${level} AND popularity = ${popularity}
       `
-      return res.status(200).json(courses)
+      if(courses.length === 0){
+        return res.status(404).json({ message: "No courses found with these filters!" })
+      } else {
+        return res.status(200).json(courses)
+      }
     }
 
     if(category){
       const courses = await sql`
         SELECT * FROM courses WHERE category = ${category}
       `
-      return res.status(200).json(courses)
+      if(courses.length === 0){
+        return res.status(404).json({ message: "No courses found with these filters!" })
+      } else {
+        return res.status(200).json(courses)
+      }
     }
 
     if(level){
       const courses = await sql`
         SELECT * FROM courses WHERE level = ${level}
       `
-      return res.status(200).json(courses)
+      if(courses.length === 0){
+        return res.status(404).json({ message: "No courses found with these filters!" })
+      } else {
+        return res.status(200).json(courses)
+      }
     }
 
     if(popularity){
       const courses = await sql`
         SELECT * FROM courses WHERE popularity = ${popularity}
       `
-      return res.status(200).json(courses)
+      if(courses.length === 0){
+        return res.status(404).json({ message: "No courses found with these filters!" })
+      } else {
+        return res.status(200).json(courses)
+      }
     }
 
     res.status(400).json({ message: "Please provide at least one filter!" })
