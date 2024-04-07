@@ -11,33 +11,60 @@ router.get("/filter", verifyToken, async (req, res) => {
   try {
     const { category, level, popularity } = req.body
 
-    if(!category && !level && !popularity) {
-      return res.status(400).json({ message: "Please provide at least one filter" })
+    // query the database to get courses based on filters
+    if(category && level && popularity){
+      const courses = await sql`
+        SELECT * FROM courses WHERE category = ${category} AND level = ${level} AND popularity = ${popularity}
+      `
+      return res.status(200).json(courses)
     }
 
-    let query = "SELECT * FROM courses WHERE"
-    let filters = []
+    if(category && level){
+      const courses = await sql`
+        SELECT * FROM courses WHERE category = ${category} AND level = ${level}
+      `
+      return res.status(200).json(courses)
+    }
+
+    if(category && popularity){
+      const courses = await sql`
+        SELECT * FROM courses WHERE category = ${category} AND popularity = ${popularity}
+      `
+      return res.status(200).json(courses)
+    }
+
+    if(level && popularity){
+      const courses = await sql`
+        SELECT * FROM courses WHERE level = ${level} AND popularity = ${popularity}
+      `
+      return res.status(200).json(courses)
+    }
 
     if(category){
-      filters.push(` category = '${category}'`)
+      const courses = await sql`
+        SELECT * FROM courses WHERE category = ${category}
+      `
+      return res.status(200).json(courses)
     }
+
     if(level){
-      filters.push(`level = '${level}'`)
+      const courses = await sql`
+        SELECT * FROM courses WHERE level = ${level}
+      `
+      return res.status(200).json(courses)
     }
+
     if(popularity){
-      filters.push(`popularity = '${popularity}'`)
+      const courses = await sql`
+        SELECT * FROM courses WHERE popularity = ${popularity}
+      `
+      return res.status(200).json(courses)
     }
 
-    query += filters.join(" AND ")
-    console.log(query)
-
-    const courses = await sql`${query}`
-    res.status(200).json(courses)
+    res.status(400).json({ message: "Please provide at least one filter!" })
   } catch (error) {
     console.error("Error fetching courses while filtering:", error)
-    res
-      .status(500)
-      .json({ message: "Server Error while filtering the courses!" })
+    res.status(500).json({ message: "Server Error while filtering the courses!" })
   }
 })
 
@@ -46,13 +73,22 @@ router.post("/new", verifyToken, verifySuperadmin, async (req, res) => {
   try {
     const { title, description, category, level, popularity } = req.body
 
-    // Insert new course into the database
+    // insert a new course into the database
     await sql`
       INSERT INTO courses (title, description, category, level, popularity)
       VALUES (${title}, ${description}, ${category}, ${level}, ${popularity})
     `
 
-    res.status(201).json({ message: "Course created successfully" })
+    res.status(201).json({ 
+      message: "Course created successfully",
+      courseDetails:{
+        title,
+        description,
+        category,
+        level,
+        popularity
+      }
+    })
   } catch (error) {
     console.error("Error creating course:", error)
     res.status(500).json({ message: "Server Error while creating the course!" })
@@ -66,6 +102,7 @@ router.get('/all', verifyToken, async (req, res) => {
     const page = req.query.page || 1;
     // we can send a query for page like this: http://localhost:5000/api/courses/all?page=2
 
+    // limiting the number of courses to be shown on each page for better performance
     const courses = await sql`SELECT * FROM courses LIMIT ${limit} OFFSET ${(page - 1) * limit}`
 
     res.status(200).json(courses)
@@ -93,9 +130,7 @@ router.get(
       res.status(200).json(course[0])
     } catch (error) {
       console.error("Error fetching course details:", error)
-      res
-        .status(500)
-        .json({
+      res.status(500).json({
           message:
             "Server Error while fetching single course details using id!",
         })
@@ -200,6 +235,10 @@ router.get("/enrolled", verifyToken, async (req, res) => {
       INNER JOIN enrollments e ON c.id = e.course_id
       WHERE e.user_email = ${userEmail}
     `
+
+    if(enrolledCourses.length === 0){
+      return res.status(404).json({ message: "No courses enrolled as of now!" })
+    }
 
     res.status(200).json(enrolledCourses)
   } catch (error) {

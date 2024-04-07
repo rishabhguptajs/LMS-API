@@ -9,7 +9,7 @@ import { verifyToken } from "../middlewares/authMiddleware.js"
 
 
 const router = express.Router()
-const resend = new Resend(process.env.RESEND_API)
+const resend = new Resend(`${process.env.RESEND_API}`)
 
 
 router.post("/register", async (req, res) => {
@@ -26,10 +26,10 @@ router.post("/register", async (req, res) => {
     // check password strength
     const passwordStrengthResult = passwordStrength(password).value
     if(passwordStrengthResult == 'Too weak') {
-      return res.status(400).json({ message: "Password is too weak" })
+      return res.status(400).json({ message: "Password is too weak, try again!" })
     }
     if(passwordStrengthResult == 'Weak') {
-      return res.status(400).json({ message: "Password is weak" })
+      return res.status(400).json({ message: "Password is weak, try again!" })
     }
 
     // hash the password for security
@@ -49,11 +49,18 @@ router.post("/register", async (req, res) => {
     })
 
     // Send welcome email
-    await resend.emails.send({
-      to: email,
+   try {
+    const res = await resend.emails.send({
+      from: process.env.EMAIL_ADDRESS,
+      to: [`${email}`],
       subject: "Welcome to our platform!",
-      text: `Hi ${name},\n\nWelcome to our platform! We're excited to have you on board.`,
+      html: `Hi <strong>${name}!</strong>,\n\nWelcome to our platform! We're excited to have you on board.`,
     })
+
+    console.log("Email sent successfully:", res)
+   } catch (error) {
+    console.error("Error sending welcome email:", error)
+   }
   } catch (error) {
     console.error("Error registering user:", error)
     res.status(500).json({ message: "Server Error while registering the user!" })
@@ -89,7 +96,7 @@ router.post("/login", async (req, res) => {
       SELECT * FROM users WHERE email = ${email}
     `
     if (existingUser.length === 0) {
-      return res.status(400).json({ message: "Invalid credentials" })
+      return res.status(400).json({ message: "User not found!" })
     }
 
     // validate and compare the password
@@ -98,10 +105,8 @@ router.post("/login", async (req, res) => {
       existingUser[0].password
     )
     if (!isPasswordValid) {
-      return res.status(400).json({ message: "Invalid credentials" })
+      return res.status(400).json({ message: "Wrong password!" })
     }
-
-    console.log(existingUser[0].issuperadmin)
 
     const token = jwt.sign({ 
       email: existingUser[0].email,
@@ -127,7 +132,7 @@ router.post('/forgot-password', async (req, res) => {
     `
 
     if (existingUser.length === 0) {
-      return res.status(400).json({ message: "User not found" })
+      return res.status(400).json({ message: "User not found!" })
     }
 
     // generate password reset token
