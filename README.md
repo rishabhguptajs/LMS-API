@@ -56,3 +56,32 @@ The LMS (Learning Management System) API is a backend service designed to manage
 
 #### View Enrolled Courses
 - Endpoint: `GET /api/courses/enrolled`
+
+
+## How to Use
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Create a `.env` file and add the following environment variables:
+```
+JWT_SECRET=your_jwt_secret
+PGDATABASE = your_postgres_database
+PGUSER = your_postgres_user
+PGPASSWORD = your_postgres_password
+ENDPOINT_ID = your_endpoint_id
+RESEND_API = your_resend_api
+CLOUDINARY_CLOUD_NAME = your_cloudinary_cloud_name
+CLOUDINARY_SECRET = your_cloudinary_secret
+CLOUDINARY_KEY = your_cloudinary_key
+EMAIL_ADDRESS = your_email_address
+```
+4. Run the server: `npm start`
+5. Access the API at `http://localhost:5000`
+
+## Thanks for Reading!
+```
+{
+    "message": "I hope you found this helpful!",
+    "author": "rishabhguptajs",
+    "github": "github.com/rishabhguptajs"
+}
+```
